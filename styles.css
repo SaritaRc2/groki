@@ -629,3 +629,19 @@ a:focus-visible {
   z-index: 1;
 }
 .viz span { z-index: 2; mix-blend-mode: screen; opacity: 0.28; }
+
+.player { margin: 0.6rem 0 0.2rem; }
+.player-label {
+  margin: 0 0 0.35rem;
+  color: var(--muted);
+  font: 0.75rem var(--sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.player iframe {
+  width: min(100%, 360px);
+  height: 202px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #05060a;
+}
