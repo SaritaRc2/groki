@@ -20,8 +20,11 @@
   buttons.forEach(function (button) {
     button.addEventListener("click", function () {
       var filter = button.getAttribute("data-filter");
+      if (filter !== "all" && button.getAttribute("aria-pressed") === "true") {
+        filter = "all";
+      }
       buttons.forEach(function (other) {
-        var pressed = other === button;
+        var pressed = other.getAttribute("data-filter") === filter;
         other.setAttribute("aria-pressed", pressed ? "true" : "false");
       });
       apply(filter);

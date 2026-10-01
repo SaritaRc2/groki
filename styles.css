@@ -579,6 +579,7 @@ a:focus-visible {
   font-size: 1.15rem;
 }
 .empty { text-align: center; color: var(--muted); }
+.story[hidden] { display: none; }
 
 @media (max-width: 860px) {
   .sheet { transform: none; border-radius: 18px; }
