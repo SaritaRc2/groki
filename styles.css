@@ -579,7 +579,9 @@ a:focus-visible {
   font-size: 1.15rem;
 }
 .empty { text-align: center; color: var(--muted); }
-.story[hidden] { display: none; }
+.story[hidden],
+.lead[hidden],
+.card[hidden] { display: none !important; }
 
 @media (max-width: 860px) {
   .sheet { transform: none; border-radius: 18px; }
