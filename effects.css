@@ -1,0 +1,255 @@
+/* GROKI effects layer: HUD frames, neon borders, light sweeps, glitch, decode,
+   scroll reveals, particle field. Decorative only: every overlay ignores taps.
+   Keep this file and effects.js when rewriting the daily edition. */
+
+@property --fx-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* ---------- Backdrop: particle canvas + moving grid floor ---------- */
+.fx-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.9;
+}
+.lattice { animation: fx-grid-mobile 7s linear infinite; will-change: transform; }
+@media (min-width: 861px) {
+  .lattice { animation-name: fx-grid-desk; }
+}
+
+/* ---------- Sheet: HUD corner brackets + slow scan beam ---------- */
+.sheet { position: relative; }
+.fx-beam {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.fx-beam i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 180px;
+  background: linear-gradient(to bottom, transparent, rgba(94, 246, 255, 0.07) 45%, rgba(255, 61, 190, 0.05) 60%, transparent);
+  transform: translateY(-200px);
+  animation: fx-beam 9s linear infinite;
+  will-change: transform;
+}
+
+.fx-hud {
+  --c: rgba(94, 246, 255, 0.85);
+  --l: 14px;
+  --t: 1.5px;
+  position: absolute;
+  inset: 7px;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: 10px;
+  background:
+    linear-gradient(var(--c), var(--c)) left top / var(--l) var(--t),
+    linear-gradient(var(--c), var(--c)) left top / var(--t) var(--l),
+    linear-gradient(var(--c), var(--c)) right top / var(--l) var(--t),
+    linear-gradient(var(--c), var(--c)) right top / var(--t) var(--l),
+    linear-gradient(var(--c), var(--c)) left bottom / var(--l) var(--t),
+    linear-gradient(var(--c), var(--c)) left bottom / var(--t) var(--l),
+    linear-gradient(var(--c), var(--c)) right bottom / var(--l) var(--t),
+    linear-gradient(var(--c), var(--c)) right bottom / var(--t) var(--l);
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 4px rgba(94, 246, 255, 0.7));
+  transition: inset 0.35s ease, --c 0.35s ease;
+}
+.sheet > .fx-hud { --l: 26px; --t: 2px; inset: 10px; }
+
+/* ---------- Masthead: live dot, glitch title, travelling pulse ---------- */
+.kicker::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 0.55em;
+  vertical-align: 0.08em;
+  border-radius: 50%;
+  background: var(--magenta);
+  box-shadow: 0 0 10px var(--magenta);
+  animation: fx-blink 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+h1 { position: relative; }
+h1[data-text]::before,
+h1[data-text]::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  opacity: 0;
+}
+h1[data-text]::before { color: var(--cyan); animation: fx-glitch-a 6.5s steps(1) infinite; }
+h1[data-text]::after { color: var(--magenta); animation: fx-glitch-b 6.5s steps(1) infinite; }
+
+.rule { position: relative; overflow: hidden; }
+.rule::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 22%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+  box-shadow: 0 0 12px #fff;
+  transform: translateX(-120%);
+  animation: fx-pulse 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ---------- Tabs: neon ring on the active desk, sweep on hover ---------- */
+.cats button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.cats button::before,
+.cats button::after { content: ""; position: absolute; pointer-events: none; }
+.cats button::before {
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--fx-angle), var(--cyan), var(--magenta), var(--violet), var(--cyan));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.cats button[aria-pressed="true"]::before { opacity: 1; animation: fx-spin-angle 3.5s linear infinite; }
+.cats button[aria-pressed="true"] { box-shadow: 0 0 18px rgba(94, 246, 255, 0.3), 0 0 26px rgba(255, 61, 190, 0.15); }
+.cats button::after {
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
+  transform: translateX(-130%);
+}
+.cats button:hover::after,
+.cats button:focus-visible::after { animation: fx-sweep 0.9s ease; }
+
+/* ---------- Lead + cards: neon gradient border, HUD brackets, light sweep ---------- */
+.lead,
+.card {
+  position: relative;
+  isolation: isolate;
+}
+.lead::before,
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--fx-angle), var(--cyan), var(--violet), var(--magenta), var(--cyan));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.lead::before { opacity: 0.9; animation: fx-spin-angle 6s linear infinite; }
+.card:hover::before,
+.card:focus-within::before { opacity: 1; animation: fx-spin-angle 4s linear infinite; }
+
+.lead::after,
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(94, 246, 255, 0.14) 44%, rgba(255, 255, 255, 0.24) 50%, rgba(255, 61, 190, 0.12) 56%, transparent 65%);
+  transform: translateX(-130%);
+}
+.card:hover::after,
+.lead:hover::after,
+.story.fx-sweep::after { animation: fx-sweep 1.15s cubic-bezier(.3, .6, .3, 1); }
+
+.lead:hover .fx-hud,
+.card:hover .fx-hud,
+.card:focus-within .fx-hud { inset: 4px; --c: rgba(255, 61, 190, 0.9); }
+
+.viz img { transition: transform 0.8s cubic-bezier(.2, .8, .2, 1); }
+.card:hover .viz img,
+.lead:hover .viz img { transform: scale(1.06); }
+
+/* ---------- Scroll-in reveals (only once JS is running) ---------- */
+.fx-ready .story {
+  transition:
+    transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease,
+    opacity 0.7s ease, translate 0.7s cubic-bezier(.2, .8, .2, 1);
+}
+.fx-ready .story:not(.fx-in) { opacity: 0; translate: 0 22px; }
+.fx-ready .story.fx-in { opacity: 1; translate: 0 0; }
+
+/* Hidden desks must stay hidden whatever the effects do. */
+.story[hidden],
+.lead[hidden],
+.card[hidden] { display: none !important; }
+
+/* ---------- Motion off ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .fx-field, .fx-beam { display: none; }
+  .fx-ready .story:not(.fx-in) { opacity: 1; translate: none; }
+  h1[data-text]::before, h1[data-text]::after { display: none; }
+  .lattice { animation: none !important; }
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes fx-spin-angle { to { --fx-angle: 360deg; } }
+@keyframes fx-sweep {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
+}
+@keyframes fx-beam {
+  from { transform: translateY(-200px); }
+  to { transform: translateY(calc(100vh + 400px)); }
+}
+@keyframes fx-pulse {
+  0% { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(560%); }
+}
+@keyframes fx-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+@keyframes fx-grid-mobile {
+  from { transform: translateY(0); }
+  to { transform: translateY(72px); }
+}
+@keyframes fx-grid-desk {
+  from { transform: perspective(800px) rotateX(58deg) translateY(-8%); }
+  to { transform: perspective(800px) rotateX(58deg) translateY(calc(-8% + 72px)); }
+}
+@keyframes fx-glitch-a {
+  0%, 91%, 100% { opacity: 0; transform: none; clip-path: none; }
+  92% { opacity: 0.85; transform: translate(-4px, 1px); clip-path: inset(12% 0 58% 0); }
+  94% { opacity: 0.85; transform: translate(3px, -1px); clip-path: inset(62% 0 8% 0); }
+  96% { opacity: 0.7; transform: translate(-2px, 0); clip-path: inset(34% 0 40% 0); }
+  97% { opacity: 0; }
+}
+@keyframes fx-glitch-b {
+  0%, 91%, 100% { opacity: 0; transform: none; clip-path: none; }
+  92.5% { opacity: 0.8; transform: translate(4px, -1px); clip-path: inset(48% 0 22% 0); }
+  94.5% { opacity: 0.8; transform: translate(-3px, 1px); clip-path: inset(6% 0 72% 0); }
+  96.5% { opacity: 0.6; transform: translate(2px, 0); clip-path: inset(70% 0 4% 0); }
+  97.5% { opacity: 0; }
+}
