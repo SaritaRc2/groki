@@ -1,5 +1,8 @@
-/* GROKI effects layer: HUD frames, neon borders, light sweeps, glitch, decode,
-   scroll reveals, particle field. Decorative only: every overlay ignores taps.
+/* GROKI-FX v2 (liquid glass + in-motion tiles)
+   GROKI effects layer: color blobs, liquid glass sheet and cards, HUD frames,
+   always-on neon borders, auto light sheen, Ken Burns "in motion" story images,
+   glitch, decode, scroll reveals, particle field. Decorative only: every overlay
+   ignores taps and sits behind or inside cards, never over the tabs or the player.
    Keep this file and effects.js when rewriting the daily edition. */
 
 @property --fx-angle {
@@ -8,7 +11,26 @@
   initial-value: 0deg;
 }
 
-/* ---------- Backdrop: particle canvas + moving grid floor ---------- */
+/* ---------- Backdrop: 3 drifting color blobs, particle canvas, grid floor ---------- */
+.fx-blob {
+  position: absolute;
+  width: clamp(260px, 46vw, 640px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  /* soft-edged gradient instead of filter: blur, so phones don't pay for a blur pass */
+  background: radial-gradient(circle at 50% 50%, var(--fx-blob) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 50%, var(--fx-blob) 0%, color-mix(in srgb, var(--fx-blob) 45%, transparent) 38%, transparent 70%);
+  animation: fx-drift 16s ease-in-out infinite alternate;
+}
+.fx-blob.b1 { --fx-blob: #3a2cff; left: -12%; top: 6%; }
+.fx-blob.b2 { --fx-blob: #ff3dbe; right: -14%; top: 34%; animation-delay: -6s; animation-duration: 19s; }
+.fx-blob.b3 { --fx-blob: #14e6ff; left: 26%; bottom: -16%; animation-delay: -3s; animation-duration: 22s; opacity: 0.4; }
+/* The blobs replace the older single aurora smear. */
+.void.fx-has-blobs .aurora { display: none; }
+
 .fx-field {
   position: absolute;
   inset: 0;
@@ -22,8 +44,32 @@
   .lattice { animation-name: fx-grid-desk; }
 }
 
-/* ---------- Sheet: HUD corner brackets + slow scan beam ---------- */
-.sheet { position: relative; }
+/* ---------- Liquid glass sheet ---------- */
+.sheet {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(16, 24, 38, 0.62), rgba(7, 11, 18, 0.54));
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    var(--shadow),
+    0 0 60px rgba(94, 246, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 0 1px rgba(94, 246, 255, 0.06);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+}
+/* diagonal glare, painted behind the sheet's content */
+.sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.13), transparent 30%, transparent 70%, rgba(94, 246, 255, 0.07));
+}
+
+/* Slow scan beam + HUD corner brackets */
 .fx-beam {
   position: absolute;
   inset: 0;
@@ -41,7 +87,6 @@
   background: linear-gradient(to bottom, transparent, rgba(94, 246, 255, 0.07) 45%, rgba(255, 61, 190, 0.05) 60%, transparent);
   transform: translateY(-200px);
   animation: fx-beam 9s linear infinite;
-  will-change: transform;
 }
 
 .fx-hud {
@@ -113,6 +158,7 @@ h1[data-text]::after { color: var(--magenta); animation: fx-glitch-b 6.5s steps(
 }
 
 /* ---------- Tabs: neon ring on the active desk, sweep on hover ---------- */
+.cats { position: relative; z-index: 5; }
 .cats button {
   position: relative;
   overflow: hidden;
@@ -141,13 +187,37 @@ h1[data-text]::after { color: var(--magenta); animation: fx-glitch-b 6.5s steps(
 }
 .cats button:hover::after,
 .cats button:focus-visible::after { animation: fx-sweep 0.9s ease; }
+.player { position: relative; z-index: 5; }
 
-/* ---------- Lead + cards: neon gradient border, HUD brackets, light sweep ---------- */
+/* ---------- Liquid glass cards ---------- */
 .lead,
 .card {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.13);
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.09), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+    rgba(6, 10, 18, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 16px 40px rgba(0, 0, 0, 0.28);
 }
+.lead:hover {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 36px rgba(94, 246, 255, 0.14);
+}
+.card:hover,
+.card:focus-within {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 18px 44px rgba(0, 0, 0, 0.35), 0 0 26px rgba(255, 61, 190, 0.14);
+}
+/* Real backdrop blur on cards only where there's GPU headroom (desktop). */
+@media (min-width: 861px) and (hover: hover) {
+  .card {
+    -webkit-backdrop-filter: blur(12px) saturate(1.45);
+    backdrop-filter: blur(12px) saturate(1.45);
+  }
+}
+
+/* Rotating conic neon border on every card, all the time */
 .lead::before,
 .card::before {
   content: "";
@@ -161,13 +231,16 @@ h1[data-text]::after { color: var(--magenta); animation: fx-glitch-b 6.5s steps(
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  opacity: 0;
+  opacity: 0.5;
+  animation: fx-spin-angle 9s linear infinite;
+  animation-delay: var(--fx-ang-delay, 0s);
   transition: opacity 0.4s ease;
 }
-.lead::before { opacity: 0.9; animation: fx-spin-angle 6s linear infinite; }
+.lead::before { opacity: 0.9; animation-duration: 6s; }
 .card:hover::before,
-.card:focus-within::before { opacity: 1; animation: fx-spin-angle 4s linear infinite; }
+.card:focus-within::before { opacity: 1; }
 
+/* Light sheen that crosses each card on its own every few seconds */
 .lead::after,
 .card::after {
   content: "";
@@ -176,20 +249,58 @@ h1[data-text]::after { color: var(--magenta); animation: fx-glitch-b 6.5s steps(
   z-index: 3;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(105deg, transparent 35%, rgba(94, 246, 255, 0.14) 44%, rgba(255, 255, 255, 0.24) 50%, rgba(255, 61, 190, 0.12) 56%, transparent 65%);
+  background: linear-gradient(105deg, transparent 35%, rgba(94, 246, 255, 0.12) 44%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 61, 190, 0.1) 56%, transparent 65%);
   transform: translateX(-130%);
+  animation: fx-sheen 9s ease-in-out infinite;
+  animation-delay: var(--fx-sheen-delay, 0s);
 }
 .card:hover::after,
-.lead:hover::after,
-.story.fx-sweep::after { animation: fx-sweep 1.15s cubic-bezier(.3, .6, .3, 1); }
+.lead:hover::after { animation: fx-sweep 1.15s cubic-bezier(.3, .6, .3, 1); }
 
 .lead:hover .fx-hud,
 .card:hover .fx-hud,
 .card:focus-within .fx-hud { inset: 4px; --c: rgba(255, 61, 190, 0.9); }
 
-.viz img { transition: transform 0.8s cubic-bezier(.2, .8, .2, 1); }
-.card:hover .viz img,
-.lead:hover .viz img { transform: scale(1.06); }
+/* ---------- "In motion" tiles: frame stays still, the picture slowly pans ---------- */
+.viz img {
+  transform-origin: 50% 50%;
+  animation: fx-kb-a var(--fx-kb-dur, 17s) ease-in-out infinite alternate;
+  animation-delay: var(--fx-kb-delay, 0s);
+}
+.story.fx-kb-b .viz img { animation-name: fx-kb-b; }
+.viz .fx-live {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font: 600 10px/1 var(--sans);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: rgba(5, 6, 10, 0.72);
+  border: 1px solid rgba(94, 246, 255, 0.45);
+  box-shadow: 0 0 12px rgba(94, 246, 255, 0.25);
+  pointer-events: none;
+}
+.fx-live::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--magenta);
+  box-shadow: 0 0 8px var(--magenta);
+  animation: fx-blink 1.8s ease-in-out infinite;
+}
+
+/* Off-screen cards pause their loops so the phone only animates what you see. */
+.fx-io .story:not(.fx-vis) .viz img,
+.fx-io .story:not(.fx-vis)::before,
+.fx-io .story:not(.fx-vis)::after { animation-play-state: paused; }
 
 /* ---------- Scroll-in reveals (only once JS is running) ---------- */
 .fx-ready .story {
@@ -205,12 +316,25 @@ h1[data-text]::after { color: var(--magenta); animation: fx-glitch-b 6.5s steps(
 .lead[hidden],
 .card[hidden] { display: none !important; }
 
+/* ---------- Phones: lighter glass, fewer moving parts ---------- */
+@media (max-width: 640px) {
+  .sheet {
+    background: linear-gradient(180deg, rgba(16, 24, 38, 0.68), rgba(7, 11, 18, 0.6));
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+  }
+  .fx-beam { display: none; }
+  .fx-blob { opacity: 0.42; }
+}
+
 /* ---------- Motion off ---------- */
 @media (prefers-reduced-motion: reduce) {
   .fx-field, .fx-beam { display: none; }
   .fx-ready .story:not(.fx-in) { opacity: 1; translate: none; }
   h1[data-text]::before, h1[data-text]::after { display: none; }
-  .lattice { animation: none !important; }
+  .lattice, .fx-blob, .viz img, .lead::before, .card::before,
+  .lead::after, .card::after, .fx-live::before { animation: none !important; }
+  .viz img { transform: none !important; }
 }
 
 /* ---------- Keyframes ---------- */
@@ -218,6 +342,22 @@ h1[data-text]::after { color: var(--magenta); animation: fx-glitch-b 6.5s steps(
 @keyframes fx-sweep {
   from { transform: translateX(-130%); }
   to { transform: translateX(130%); }
+}
+@keyframes fx-sheen {
+  0%, 62% { transform: translateX(-130%); }
+  86%, 100% { transform: translateX(130%); }
+}
+@keyframes fx-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(8%, -6%, 0) scale(1.1); }
+}
+@keyframes fx-kb-a {
+  from { transform: scale(1.16) translate3d(-3.5%, -2.5%, 0); }
+  to { transform: scale(1.24) translate3d(3.5%, 2.5%, 0); }
+}
+@keyframes fx-kb-b {
+  from { transform: scale(1.24) translate3d(3.5%, -2%, 0); }
+  to { transform: scale(1.16) translate3d(-3.5%, 2.5%, 0); }
 }
 @keyframes fx-beam {
   from { transform: translateY(-200px); }
@@ -253,3 +393,6 @@ h1[data-text]::after { color: var(--magenta); animation: fx-glitch-b 6.5s steps(
   96.5% { opacity: 0.6; transform: translate(2px, 0); clip-path: inset(70% 0 4% 0); }
   97.5% { opacity: 0; }
 }
+
+/* The tilted desktop sheet used to poke past the right edge and allow a sideways scroll. */
+.stage { overflow-x: clip; }

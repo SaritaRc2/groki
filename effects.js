@@ -1,4 +1,5 @@
-/* GROKI effects layer. Decorative only: nothing here touches story content,
+/* GROKI-FX v2 (liquid glass + in-motion tiles)
+   GROKI effects layer. Decorative only: nothing here touches story content,
    the category filter in script.js, or the music player.
    Keep this file and effects.css when rewriting the daily edition. */
 (function () {
@@ -16,6 +17,13 @@
     return el;
   }
 
+  /* Three drifting color blobs behind everything (static when motion is off). */
+  var host = doc.querySelector(".void");
+  if (host && !host.querySelector(".fx-blob")) {
+    ["b3", "b2", "b1"].forEach(function (b) { host.insertBefore(deco("div", "fx-blob " + b), host.firstChild); });
+    host.classList.add("fx-has-blobs");
+  }
+
   /* HUD corner brackets on the sheet, lead, and every card. */
   var sheet = doc.querySelector(".sheet");
   if (sheet) {
@@ -25,23 +33,41 @@
     sheet.insertBefore(beam, sheet.firstChild);
   }
   var stories = Array.prototype.slice.call(doc.querySelectorAll(".story"));
-  stories.forEach(function (story) { story.appendChild(deco("span", "fx-hud")); });
+
+  /* Per-card timing so the pans, borders and sheens never move in sync. */
+  stories.forEach(function (story, i) {
+    story.appendChild(deco("span", "fx-hud"));
+    var dur = 14 + ((i * 2.3) % 6);              /* 14s to 20s */
+    story.style.setProperty("--fx-kb-dur", dur.toFixed(1) + "s");
+    story.style.setProperty("--fx-kb-delay", (-((i * 3.7) % dur)).toFixed(1) + "s");
+    story.style.setProperty("--fx-sheen-delay", (-((i * 2.9) % 9)).toFixed(1) + "s");
+    story.style.setProperty("--fx-ang-delay", (-((i * 1.7) % 9)).toFixed(1) + "s");
+    if (i % 2) story.classList.add("fx-kb-b");
+  });
+
+  /* "In motion" pill on the lead picture only. */
+  var leadViz = doc.querySelector(".lead .viz");
+  if (leadViz && !leadViz.querySelector(".fx-live")) {
+    var pill = deco("div", "fx-live");
+    pill.textContent = "In motion";
+    leadViz.appendChild(pill);
+  }
 
   /* Glitch layers on the masthead title. */
   var title = doc.querySelector(".mast h1");
   if (title) title.setAttribute("data-text", title.textContent.trim());
 
-  /* Scroll-in reveals with a one-time light sweep. */
-  function reveal(story) {
-    if (story.classList.contains("fx-in")) return;
-    story.classList.add("fx-in");
-    if (!reduce) {
-      story.classList.add("fx-sweep");
-      setTimeout(function () { story.classList.remove("fx-sweep"); }, 1300);
-    }
-  }
   if (!reduce && "IntersectionObserver" in window) {
+    /* Only animate cards that are on (or near) the screen. */
+    root.classList.add("fx-io");
+    var vis = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) { entry.target.classList.toggle("fx-vis", entry.isIntersecting); });
+    }, { rootMargin: "200px 0px 200px 0px" });
+    stories.forEach(function (story) { vis.observe(story); });
+
+    /* Scroll-in reveals. */
     root.classList.add("fx-ready");
+    var reveal = function (story) { story.classList.add("fx-in"); };
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) { reveal(entry.target); io.unobserve(entry.target); }
@@ -55,6 +81,21 @@
         setTimeout(function () { stories.forEach(function (s) { if (!s.hidden) reveal(s); }); }, 0);
       });
     }
+  }
+
+  /* Hover speeds up the pan smoothly (no jump), like the 99designs tiles. */
+  if (!reduce && finePointer) {
+    stories.forEach(function (story) {
+      var img = story.querySelector(".viz img");
+      if (!img || !img.getAnimations) return;
+      function rate(r) {
+        img.getAnimations().forEach(function (a) {
+          if (a.updatePlaybackRate) a.updatePlaybackRate(r); else a.playbackRate = r;
+        });
+      }
+      story.addEventListener("pointerenter", function () { rate(3.5); });
+      story.addEventListener("pointerleave", function () { rate(1); });
+    });
   }
 
   /* Decode reveal: scrambled glyphs resolve into the real text, left to right. */
@@ -88,7 +129,6 @@
   if (leadLink) setTimeout(function () { decode(leadLink, 1300); }, 350);
 
   /* Particle field with parallax depth, drawn behind the sheet. */
-  var host = doc.querySelector(".void");
   if (!host || reduce) return;
   var canvas = deco("canvas", "fx-field");
   host.appendChild(canvas);
@@ -118,7 +158,12 @@
     }
   }
   size(); seed();
-  window.addEventListener("resize", function () { size(); seed(); });
+  /* Phones fire resize when the address bar slides; only reseed on real width changes. */
+  var lastW = w;
+  window.addEventListener("resize", function () {
+    size();
+    if (Math.abs(w - lastW) > 40) { seed(); lastW = w; }
+  });
   if (finePointer) {
     window.addEventListener("pointermove", function (e) {
       mouseX = (e.clientX / w - 0.5); mouseY = (e.clientY / h - 0.5);
